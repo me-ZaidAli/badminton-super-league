@@ -1,0 +1,13 @@
+services:
+  bsl-hub-app:
+    build: ..
+    container_name: bsl-hub-app
+    env_file: ./.env
+    expose:
+      - "4000"
+    restart: unless-stopped
+
+networks:
+  default:
+    external: true
+    name: hub-network
