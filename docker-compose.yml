@@ -1,10 +1,10 @@
 services:
   bsl-hub-app:
-    build: ..
+    build: .
     container_name: bsl-hub-app
     env_file: ./.env
-    expose:
-      - "4000"
+    ports:
+      - "4000:4000"
     restart: unless-stopped
 
 networks:
