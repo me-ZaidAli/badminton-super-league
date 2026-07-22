@@ -624,14 +624,12 @@ export default function RegisterClub() {
                     </p>
                   </div>
                   <Link href="/">
-                    <a>
-                      <ActionButton
-                        variant="cyan"
-                        icon={<Sparkles className="h-4 w-4" />}
-                      >
-                        Back to League Mode
-                      </ActionButton>
-                    </a>
+                    <ActionButton
+                      variant="cyan"
+                      icon={<Sparkles className="h-4 w-4" />}
+                    >
+                      Back to League Mode
+                    </ActionButton>
                   </Link>
                 </div>
               )}

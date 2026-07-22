@@ -550,14 +550,12 @@ export default function JoinPlayer() {
                     ACTIVE and able to top up your wallet.
                   </p>
                   <Link href="/wallet">
-                    <a>
-                      <ActionButton
-                        variant="cyan"
-                        icon={<Sparkles className="h-4 w-4" />}
-                      >
-                        Open Wallet
-                      </ActionButton>
-                    </a>
+                    <ActionButton
+                      variant="cyan"
+                      icon={<Sparkles className="h-4 w-4" />}
+                    >
+                      Open Wallet
+                    </ActionButton>
                   </Link>
                 </div>
               )}

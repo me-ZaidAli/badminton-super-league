@@ -259,10 +259,8 @@ function FixtureChip({ f, onDragStart }: { f: any; onDragStart: () => void }) {
       data-testid={`fixture-chip-${f.id}`}
     >
       <div className="flex items-center justify-between text-xs">
-        <Link href={`/match/${f.id}`}>
-          <a className="font-semibold truncate hover:underline">
-            {f.homeTeamName}
-          </a>
+        <Link href={`/match/${f.id}`} className="font-semibold truncate hover:underline">
+          {f.homeTeamName}
         </Link>
         <span
           className="font-black tabular-nums px-1.5"
@@ -270,10 +268,8 @@ function FixtureChip({ f, onDragStart }: { f: any; onDragStart: () => void }) {
         >
           {f.homeRubbers}–{f.awayRubbers}
         </span>
-        <Link href={`/match/${f.id}`}>
-          <a className="font-semibold truncate hover:underline">
-            {f.awayTeamName}
-          </a>
+        <Link href={`/match/${f.id}`} className="font-semibold truncate hover:underline">
+          {f.awayTeamName}
         </Link>
       </div>
       <div

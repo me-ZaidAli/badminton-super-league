@@ -71,7 +71,9 @@ export default function LeagueMode() {
       const r = await fetch("/api/bsl/fixtures?status=FINISHED", {
         credentials: "include",
       });
-      return r.json();
+      if (!r.ok) throw new Error("Failed to load finished fixtures");
+      const data = await r.json();
+      return Array.isArray(data) ? data : [];
     },
   });
   // Poll live/showcase fixtures every 10s so the board updates scores by itself
@@ -83,7 +85,9 @@ export default function LeagueMode() {
       const r = await fetch("/api/bsl/fixtures?status=LIVE", {
         credentials: "include",
       });
-      return r.json();
+      if (!r.ok) throw new Error("Failed to load live fixtures");
+      const data = await r.json();
+      return Array.isArray(data) ? data : [];
     },
   });
   const { data: upcomingFixtures = [] } = useQuery<any[]>({
@@ -93,7 +97,9 @@ export default function LeagueMode() {
       const r = await fetch("/api/bsl/fixtures?status=SCHEDULED", {
         credentials: "include",
       });
-      return r.json();
+      if (!r.ok) throw new Error("Failed to load upcoming fixtures");
+      const data = await r.json();
+      return Array.isArray(data) ? data : [];
     },
   });
   const { data: showcase = [] } = useQuery<any[]>({
@@ -103,7 +109,9 @@ export default function LeagueMode() {
       const r = await fetch("/api/bsl/fixtures-showcase?limit=6", {
         credentials: "include",
       });
-      return r.json();
+      if (!r.ok) throw new Error("Failed to load showcase fixtures");
+      const data = await r.json();
+      return Array.isArray(data) ? data : [];
     },
   });
   const { data: mvp = [] } = useQuery<any[]>({ queryKey: ["/api/bsl/mvp"] });
@@ -283,74 +291,62 @@ export default function LeagueMode() {
           >
             {!mePlayer && (
               <Link href="/join">
-                <a>
-                  <ActionButton
-                    variant="cyan"
-                    icon={<Zap className="h-4 w-4" />}
-                  >
-                    Join as Player
-                  </ActionButton>
-                </a>
+                <ActionButton
+                  variant="cyan"
+                  icon={<Zap className="h-4 w-4" />}
+                >
+                  Join as Player
+                </ActionButton>
               </Link>
             )}
             {mePlayer && (
               <>
                 <Link href="/profile">
-                  <a>
-                    <ActionButton
-                      variant="cyan"
-                      icon={<Crown className="h-4 w-4" />}
-                    >
-                      My BSL Profile
-                    </ActionButton>
-                  </a>
+                  <ActionButton
+                    variant="cyan"
+                    icon={<Crown className="h-4 w-4" />}
+                  >
+                    My BSL Profile
+                  </ActionButton>
                 </Link>
                 <Link href="/wallet">
-                  <a>
-                    <ActionButton
-                      variant="cyan"
-                      icon={<WalletIcon className="h-4 w-4" />}
-                    >
-                      Wallet · £
-                      {((mePlayer.walletBalance || 0) / 100).toFixed(2)}
-                    </ActionButton>
-                  </a>
+                  <ActionButton
+                    variant="cyan"
+                    icon={<WalletIcon className="h-4 w-4" />}
+                  >
+                    Wallet · £
+                    {((mePlayer.walletBalance || 0) / 100).toFixed(2)}
+                  </ActionButton>
                 </Link>
               </>
             )}
             {isClubManager ? (
               <Link href="/my-club">
-                <a>
-                  <ActionButton
-                    variant="gold"
-                    icon={<Shield className="h-4 w-4" />}
-                  >
-                    Manage My Club
-                  </ActionButton>
-                </a>
+                <ActionButton
+                  variant="gold"
+                  icon={<Shield className="h-4 w-4" />}
+                >
+                  Manage My Club
+                </ActionButton>
               </Link>
             ) : (
               <Link href="/register-club">
-                <a>
-                  <ActionButton
-                    variant="gold"
-                    icon={<Shield className="h-4 w-4" />}
-                  >
-                    Register a Club
-                  </ActionButton>
-                </a>
+                <ActionButton
+                  variant="gold"
+                  icon={<Shield className="h-4 w-4" />}
+                >
+                  Register a Club
+                </ActionButton>
               </Link>
             )}
             <Link href="/prizes">
-              <a>
-                <ActionButton
-                  variant="gold"
-                  icon={<Trophy className="h-4 w-4" />}
-                  data-testid="button-prizes"
-                >
-                  Prize Vault
-                </ActionButton>
-              </a>
+              <ActionButton
+                variant="gold"
+                icon={<Trophy className="h-4 w-4" />}
+                data-testid="button-prizes"
+              >
+                Prize Vault
+              </ActionButton>
             </Link>
             <ActionButton
               variant="ghost"
@@ -363,24 +359,20 @@ export default function LeagueMode() {
             {isAdmin && (
               <>
                 <Link href="/admin/verify">
-                  <a>
-                    <ActionButton
-                      variant="ghost"
-                      icon={<Sparkles className="h-4 w-4" />}
-                    >
-                      Verify Payments
-                    </ActionButton>
-                  </a>
+                  <ActionButton
+                    variant="ghost"
+                    icon={<Sparkles className="h-4 w-4" />}
+                  >
+                    Verify Payments
+                  </ActionButton>
                 </Link>
                 <Link href="/admin/fixtures">
-                  <a>
-                    <ActionButton
-                      variant="ghost"
-                      icon={<Calendar className="h-4 w-4" />}
-                    >
-                      Fixture Board
-                    </ActionButton>
-                  </a>
+                  <ActionButton
+                    variant="ghost"
+                    icon={<Calendar className="h-4 w-4" />}
+                  >
+                    Fixture Board
+                  </ActionButton>
                 </Link>
               </>
             )}
@@ -625,7 +617,7 @@ export default function LeagueMode() {
           tone="cyan"
           icon={<History className="h-4 w-4" />}
         >
-          {finishedFixtures.length === 0 ? (
+          {!Array.isArray(finishedFixtures) || finishedFixtures.length === 0 ? (
             <div
               className="py-10 text-center text-sm"
               style={{ color: BSL.muted }}
@@ -833,13 +825,12 @@ export default function LeagueMode() {
             tone="gold"
             icon={<Shield className="h-4 w-4" />}
             action={
-              <Link href="/register-club">
-                <a
-                  className="text-[11px] uppercase tracking-widest font-bold inline-flex items-center gap-1"
-                  style={{ color: BSL.gold }}
-                >
-                  Register <ChevronRight className="h-3 w-3" />
-                </a>
+              <Link
+                href="/register-club"
+                className="text-[11px] uppercase tracking-widest font-bold inline-flex items-center gap-1"
+                style={{ color: BSL.gold }}
+              >
+                Register <ChevronRight className="h-3 w-3" />
               </Link>
             }
           >

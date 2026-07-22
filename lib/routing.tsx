@@ -21,7 +21,7 @@ export function Link({
   const cleanHref =
     typeof href === "string" ? href.replace(/^\/bsl/, "") || "/" : href;
   return (
-    <NextLink href={cleanHref as string} {...props} legacyBehavior>
+    <NextLink href={cleanHref as string} {...props}>
       {children}
     </NextLink>
   );

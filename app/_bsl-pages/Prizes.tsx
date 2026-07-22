@@ -403,14 +403,12 @@ export default function BslPrizes() {
             {isAdmin && (
               <div className="mt-6">
                 <Link href="/admin/prizes">
-                  <a>
-                    <ActionButton
-                      variant="cyan"
-                      icon={<Settings2 className="h-4 w-4" />}
-                    >
-                      Manage prizes
-                    </ActionButton>
-                  </a>
+                  <ActionButton
+                    variant="cyan"
+                    icon={<Settings2 className="h-4 w-4" />}
+                  >
+                    Manage prizes
+                  </ActionButton>
                 </Link>
               </div>
             )}
@@ -1008,14 +1006,12 @@ function EmptyState({ isAdmin }: { isAdmin: boolean }) {
       {isAdmin && (
         <div className="mt-5">
           <Link href="/admin/prizes">
-            <a>
-              <ActionButton
-                variant="gold"
-                icon={<Sparkles className="h-4 w-4" />}
-              >
-                Set up prizes
-              </ActionButton>
-            </a>
+            <ActionButton
+              variant="gold"
+              icon={<Sparkles className="h-4 w-4" />}
+            >
+              Set up prizes
+            </ActionButton>
           </Link>
         </div>
       )}

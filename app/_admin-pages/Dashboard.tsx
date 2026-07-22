@@ -86,9 +86,7 @@ function StatCard({
     </motion.div>
   );
   return href ? (
-    <Link href={href}>
-      <a>{inner}</a>
-    </Link>
+    <Link href={href}>{inner}</Link>
   ) : (
     inner
   );
@@ -188,7 +186,7 @@ export default function BslAdminDashboard() {
           );
           return a.href ? (
             <Link key={i} href={a.href}>
-              <a>{inner}</a>
+              {inner}
             </Link>
           ) : (
             <div key={i}>{inner}</div>

@@ -502,15 +502,13 @@ export default function ClubsAdmin() {
                           </ActionButton>
                         )}
                         <Link href={`/admin/clubs/${c.id}/manage`}>
-                          <a>
-                            <ActionButton
-                              variant="cyan"
-                              icon={<Layers className="h-3 w-3" />}
-                              testid={`button-manage-club-${c.id}`}
-                            >
-                              Manage
-                            </ActionButton>
-                          </a>
+                          <ActionButton
+                            variant="cyan"
+                            icon={<Layers className="h-3 w-3" />}
+                            testid={`button-manage-club-${c.id}`}
+                          >
+                            Manage
+                          </ActionButton>
                         </Link>
                         <ActionButton
                           variant="gold"
