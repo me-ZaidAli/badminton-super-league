@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { db } from "@/lib/server/db";
 import { bslTeams, bslTeamMembers, bslPlayers } from "@/lib/server/schema";
 import { eq, and } from "drizzle-orm";
-import { getSessionUser, isAdminish, unauthorised } from "@/lib/server/session";
+import { getSessionUser, isAdmin, unauthorised } from "@/lib/server/session";
 
 export async function POST(
   req: NextRequest,

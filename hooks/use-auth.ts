@@ -19,7 +19,7 @@ export function useUser() {
 export function useLogin() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (credentials: { username: string; password: string }) => {
+    mutationFn: async (credentials: { email: string; password: string }) => {
       const res = await apiFetch("/api/auth/login", {
         method: "POST",
         body: JSON.stringify(credentials),
@@ -27,6 +27,29 @@ export function useLogin() {
       if (!res.ok) {
         const data = await res.json().catch(() => null);
         throw new Error(data?.message ?? "Invalid credentials");
+      }
+      const user = await res.json();
+      queryClient.setQueryData(["/api/auth/me"], user);
+      return user as User;
+    },
+  });
+}
+
+export function useRegister() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      fullName: string;
+      email: string;
+      password: string;
+    }) => {
+      const res = await apiFetch("/api/auth/register", {
+        method: "POST",
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.message ?? "Failed to register");
       }
       const user = await res.json();
       queryClient.setQueryData(["/api/auth/me"], user);

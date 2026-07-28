@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/server/db";
 import { bslPrizes } from "@/lib/server/schema";
-import { getSessionUser, isAdminish } from "@/lib/server/session";
+import { getSessionUser, isAdmin } from "@/lib/server/session";
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
         bslPrizes.sortOrder,
         bslPrizes.rank,
       );
-    const filtered = isAdminish(user)
+    const filtered = isAdmin(user)
       ? rows
       : rows.filter((r) => r.isPublished);
     return Response.json(filtered);

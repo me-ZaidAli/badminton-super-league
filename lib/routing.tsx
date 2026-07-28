@@ -20,6 +20,24 @@ export function Link({
 }) {
   const cleanHref =
     typeof href === "string" ? href.replace(/^\/bsl/, "") || "/" : href;
+
+  // Legacy wouter pattern: <Link href="..."><a className="...">...</a></Link>.
+  // Next.js's Link renders its own <a> and throws if given a literal <a>
+  // child, so unwrap it here and forward its props/children onto NextLink
+  // instead of touching every call site.
+  if (React.isValidElement(children) && children.type === "a") {
+    const { children: anchorChildren, ...anchorProps } =
+      children.props as { children?: React.ReactNode } & Record<
+        string,
+        unknown
+      >;
+    return (
+      <NextLink href={cleanHref as string} {...props} {...anchorProps}>
+        {anchorChildren}
+      </NextLink>
+    );
+  }
+
   return (
     <NextLink href={cleanHref as string} {...props}>
       {children}

@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { db } from "@/lib/server/db";
 import { bslRubbers, bslFixtures } from "@/lib/server/schema";
 import { eq, and } from "drizzle-orm";
-import { getSessionUser, isAdminish, unauthorised } from "@/lib/server/session";
+import { getSessionUser, isAdmin, unauthorised } from "@/lib/server/session";
 import { audit } from "@/lib/server/utils";
 import {
   assertFixtureMutable,

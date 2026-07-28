@@ -98,6 +98,22 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const insertUserSchema = createInsertSchema(users, {
+  email: z.string().trim().toLowerCase().email(),
+  fullName: z.string().trim().min(1),
+  password: z.string().min(8),
+}).pick({ fullName: true, email: true, password: true });
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type User = typeof users.$inferSelect;
+
+// connect-pg-simple compatible session store — read/written directly by
+// lib/server/session.ts (no ORM relations needed, just raw sid/sess/expire).
+export const session = pgTable("session", {
+  sid: text("sid").primaryKey(),
+  sess: jsonb("sess").notNull(),
+  expire: timestamp("expire", { withTimezone: true }).notNull(),
+});
+
 export const bslPaymentStatusEnum = pgEnum("bsl_payment_status", [
   "PENDING_PAYMENT",
   "PENDING_VERIFICATION",

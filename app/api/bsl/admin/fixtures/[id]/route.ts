@@ -4,7 +4,7 @@ import { bslFixtures, bslRubbers } from "@/lib/server/schema";
 import { eq } from "drizzle-orm";
 import {
   getSessionUser,
-  isAdminish,
+  isAdmin,
   unauthorised,
   forbidden,
 } from "@/lib/server/session";
@@ -17,7 +17,7 @@ export async function DELETE(
   try {
     const user = await getSessionUser(req);
     if (!user) return unauthorised();
-    if (!isAdminish(user)) return forbidden();
+    if (!isAdmin(user)) return forbidden();
     const { id: idStr } = await params;
     const id = Number(idStr);
     await db.delete(bslRubbers).where(eq(bslRubbers.bslFixtureId, id));

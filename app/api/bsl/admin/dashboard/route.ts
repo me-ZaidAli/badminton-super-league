@@ -11,7 +11,7 @@ import {
 import { eq, or, desc, and } from "drizzle-orm";
 import {
   getSessionUser,
-  isAdminish,
+  isAdmin,
   unauthorised,
   forbidden,
 } from "@/lib/server/session";
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
   try {
     const user = await getSessionUser(req);
     if (!user) return unauthorised();
-    if (!isAdminish(user)) return forbidden();
+    if (!isAdmin(user)) return forbidden();
     const [playerCount] = await db
       .select({ count: sql<number>`count(*)` })
       .from(bslPlayers);

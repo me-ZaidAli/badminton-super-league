@@ -4,7 +4,7 @@ import { bslCategorySettings } from "@/lib/server/schema";
 import { eq } from "drizzle-orm";
 import {
   getSessionUser,
-  isAdminish,
+  isAdmin,
   unauthorised,
   forbidden,
 } from "@/lib/server/session";
@@ -18,7 +18,7 @@ export async function PUT(
   try {
     const user = await getSessionUser(req);
     if (!user) return unauthorised();
-    if (!isAdminish(user)) return forbidden();
+    if (!isAdmin(user)) return forbidden();
     const { category } = await params;
     if (!(ALLOWED_CATS as readonly string[]).includes(category))
       return Response.json(
@@ -65,7 +65,7 @@ export async function DELETE(
   try {
     const user = await getSessionUser(req);
     if (!user) return unauthorised();
-    if (!isAdminish(user)) return forbidden();
+    if (!isAdmin(user)) return forbidden();
     const { category } = await params;
     await db
       .delete(bslCategorySettings)

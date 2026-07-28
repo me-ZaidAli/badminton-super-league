@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { db } from "@/lib/server/db";
 import { bslClubs, bslTeams, bslLeagues } from "@/lib/server/schema";
 import { eq, desc } from "drizzle-orm";
-import { getSessionUser, isAdminish, unauthorised } from "@/lib/server/session";
+import { getSessionUser, isAdmin, unauthorised } from "@/lib/server/session";
 import { genRef } from "@/lib/server/utils";
 
 export async function GET(req: NextRequest) {
@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
       .select()
       .from(bslClubs)
       .orderBy(desc(bslClubs.createdAt));
-    const filtered = isAdminish(user)
+    const filtered = isAdmin(user)
       ? all
       : all.filter((c) => c.managerUserId === user.id || c.status === "ACTIVE");
     return Response.json(filtered);

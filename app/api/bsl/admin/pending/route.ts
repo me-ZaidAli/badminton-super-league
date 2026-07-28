@@ -4,7 +4,7 @@ import { bslPlayers, bslClubs, users } from "@/lib/server/schema";
 import { eq, or, inArray } from "drizzle-orm";
 import {
   getSessionUser,
-  isAdminish,
+  isAdmin,
   unauthorised,
   forbidden,
 } from "@/lib/server/session";
@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   try {
     const user = await getSessionUser(req);
     if (!user) return unauthorised();
-    if (!isAdminish(user)) return forbidden();
+    if (!isAdmin(user)) return forbidden();
     const pendingPlayers = await db
       .select()
       .from(bslPlayers)

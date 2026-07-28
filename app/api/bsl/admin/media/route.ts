@@ -4,7 +4,7 @@ import { bslMedia } from "@/lib/server/schema";
 import { desc } from "drizzle-orm";
 import {
   getSessionUser,
-  isAdminish,
+  isAdmin,
   unauthorised,
   forbidden,
 } from "@/lib/server/session";
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   try {
     const user = await getSessionUser(req);
     if (!user) return unauthorised();
-    if (!isAdminish(user)) return forbidden();
+    if (!isAdmin(user)) return forbidden();
     const rows = await db
       .select()
       .from(bslMedia)
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   try {
     const user = await getSessionUser(req);
     if (!user) return unauthorised();
-    if (!isAdminish(user)) return forbidden();
+    if (!isAdmin(user)) return forbidden();
     const contentType = req.headers.get("content-type") || "";
     let url: string;
     let caption: string | null = null;

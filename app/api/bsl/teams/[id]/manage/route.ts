@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { db } from "@/lib/server/db";
 import { bslTeams } from "@/lib/server/schema";
 import { eq } from "drizzle-orm";
-import { getSessionUser, isAdminish, unauthorised } from "@/lib/server/session";
+import { getSessionUser, isAdmin, unauthorised } from "@/lib/server/session";
 import { audit } from "@/lib/server/utils";
 
 export async function DELETE(
@@ -12,7 +12,7 @@ export async function DELETE(
   try {
     const user = await getSessionUser(req);
     if (!user) return unauthorised();
-    if (!isAdminish(user))
+    if (!isAdmin(user))
       return Response.json({ message: "Admin only" }, { status: 403 });
     const { id: idStr } = await params;
     const id = Number(idStr);

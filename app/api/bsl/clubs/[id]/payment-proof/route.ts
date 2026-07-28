@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { db } from "@/lib/server/db";
 import { bslClubs } from "@/lib/server/schema";
 import { eq } from "drizzle-orm";
-import { getSessionUser, isAdminish, unauthorised } from "@/lib/server/session";
+import { getSessionUser, isAdmin, unauthorised } from "@/lib/server/session";
 
 export async function POST(
   req: NextRequest,
@@ -25,7 +25,7 @@ export async function POST(
       (club as any).contactUserId === user.id ||
       (Array.isArray((club as any).adminUserIds) &&
         (club as any).adminUserIds.includes(user.id));
-    if (!owns && !isAdminish(user))
+    if (!owns && !isAdmin(user))
       return Response.json({ message: "Not your club" }, { status: 403 });
     const body = await req.json();
     const amount = Math.trunc(Number(body.paymentAmountPence));

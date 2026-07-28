@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { db } from "@/lib/server/db";
 import { bslTeams, bslPlayers, bslClubs } from "@/lib/server/schema";
 import { eq } from "drizzle-orm";
-import { getSessionUser, isAdminish, unauthorised } from "@/lib/server/session";
+import { getSessionUser, isAdmin, unauthorised } from "@/lib/server/session";
 import { audit } from "@/lib/server/utils";
 
 export async function PATCH(
@@ -32,7 +32,7 @@ export async function PATCH(
     const isClubAdmin =
       Array.isArray((club as any).adminUserIds) &&
       (club as any).adminUserIds.includes(user.id);
-    if (!isOwner && !isClubAdmin && !isAdminish(user))
+    if (!isOwner && !isClubAdmin && !isAdmin(user))
       return Response.json({ message: "Not allowed" }, { status: 403 });
     const body = await req.json();
     const raw = body?.playerId;

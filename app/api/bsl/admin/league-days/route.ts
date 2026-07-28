@@ -4,7 +4,7 @@ import { bslLeagueDays } from "@/lib/server/schema";
 import { desc } from "drizzle-orm";
 import {
   getSessionUser,
-  isAdminish,
+  isAdmin,
   unauthorised,
   forbidden,
 } from "@/lib/server/session";
@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   try {
     const user = await getSessionUser(req);
     if (!user) return unauthorised();
-    if (!isAdminish(user)) return forbidden();
+    if (!isAdmin(user)) return forbidden();
     const rows = await db
       .select()
       .from(bslLeagueDays)
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   try {
     const user = await getSessionUser(req);
     if (!user) return unauthorised();
-    if (!isAdminish(user)) return forbidden();
+    if (!isAdmin(user)) return forbidden();
     const body = await req.json();
     const { date, division, venue, startTime, endTime } = body;
     if (!date || !division)

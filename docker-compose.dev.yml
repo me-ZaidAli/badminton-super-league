@@ -1,0 +1,16 @@
+services:
+  bsl-hub-db-dev:
+    image: postgres:16-alpine
+    container_name: bsl-hub-db-dev
+    environment:
+      POSTGRES_USER: zaidali
+      POSTGRES_PASSWORD: badminton
+      POSTGRES_DB: bsl_hub_dev
+    ports:
+      - "5433:5432"
+    volumes:
+      - bsl-hub-db-dev-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  bsl-hub-db-dev-data:

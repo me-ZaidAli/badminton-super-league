@@ -4,7 +4,7 @@ import { bslPlayers } from "@/lib/server/schema";
 import { eq } from "drizzle-orm";
 import {
   getSessionUser,
-  isAdminish,
+  isAdmin,
   unauthorised,
   forbidden,
 } from "@/lib/server/session";
@@ -16,7 +16,7 @@ export async function PATCH(
   try {
     const user = await getSessionUser(req);
     if (!user) return unauthorised();
-    if (!isAdminish(user)) return forbidden();
+    if (!isAdmin(user)) return forbidden();
     const { id: idStr } = await params;
     const id = Number(idStr);
     const [updated] = await db

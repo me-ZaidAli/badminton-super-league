@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { db } from "@/lib/server/db";
 import { bslClubs, bslPlayers } from "@/lib/server/schema";
 import { eq, and, inArray } from "drizzle-orm";
-import { getSessionUser, isAdminish, unauthorised } from "@/lib/server/session";
+import { getSessionUser, isAdmin, unauthorised } from "@/lib/server/session";
 import { audit } from "@/lib/server/utils";
 
 export async function PATCH(
@@ -22,7 +22,7 @@ export async function PATCH(
       .limit(1);
     if (!club)
       return Response.json({ message: "Club not found" }, { status: 404 });
-    if (club.managerUserId !== user.id && !isAdminish(user))
+    if (club.managerUserId !== user.id && !isAdmin(user))
       return Response.json(
         { message: "Only the owner or super admin can change club admins" },
         { status: 403 },

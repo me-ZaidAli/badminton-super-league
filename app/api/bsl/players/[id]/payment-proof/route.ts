@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { db } from "@/lib/server/db";
 import { bslPlayers } from "@/lib/server/schema";
 import { eq } from "drizzle-orm";
-import { getSessionUser, isAdminish, unauthorised } from "@/lib/server/session";
+import { getSessionUser, isAdmin, unauthorised } from "@/lib/server/session";
 
 export async function POST(
   req: NextRequest,
@@ -20,7 +20,7 @@ export async function POST(
       .limit(1);
     if (!player)
       return Response.json({ message: "Player not found" }, { status: 404 });
-    if (player.userId !== user.id && !isAdminish(user))
+    if (player.userId !== user.id && !isAdmin(user))
       return Response.json(
         { message: "Not your player record" },
         { status: 403 },

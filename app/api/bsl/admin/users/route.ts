@@ -4,7 +4,7 @@ import { users } from "@/lib/server/schema";
 import { eq } from "drizzle-orm";
 import {
   getSessionUser,
-  isAdminish,
+  isAdmin,
   isOwner,
   unauthorised,
   forbidden,
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   try {
     const user = await getSessionUser(req);
     if (!user) return unauthorised();
-    if (!isAdminish(user)) return forbidden();
+    if (!isAdmin(user)) return forbidden();
     const body = await req.json();
     const { email, fullName, password, role } = body;
     if (!email || !fullName || !password)

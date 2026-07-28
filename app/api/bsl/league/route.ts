@@ -4,7 +4,7 @@ import { bslLeagues, bslLeagueDays } from "@/lib/server/schema";
 import { eq, desc, and, or, sql, inArray } from "drizzle-orm";
 import {
   getSessionUser,
-  isAdminish,
+  isAdmin,
   unauthorised,
   forbidden,
 } from "@/lib/server/session";
@@ -54,7 +54,7 @@ export async function PATCH(req: NextRequest) {
   try {
     const user = await getSessionUser(req);
     if (!user) return unauthorised();
-    if (!isAdminish(user)) return forbidden();
+    if (!isAdmin(user)) return forbidden();
     const body = (await req.json()) || {};
     const allowedStr = [
       "name",

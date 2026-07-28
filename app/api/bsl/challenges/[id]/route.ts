@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { db } from "@/lib/server/db";
 import { bslChallenges, bslPlayers } from "@/lib/server/schema";
 import { eq } from "drizzle-orm";
-import { getSessionUser, isAdminish, unauthorised } from "@/lib/server/session";
+import { getSessionUser, isAdmin, unauthorised } from "@/lib/server/session";
 import { audit } from "@/lib/server/utils";
 
 export async function PATCH(
@@ -40,13 +40,13 @@ export async function PATCH(
       .limit(1);
     const myClubId = me?.bslClubId;
     if (action === "CANCEL") {
-      if (challenge.challengerClubId !== myClubId && !isAdminish(user))
+      if (challenge.challengerClubId !== myClubId && !isAdmin(user))
         return Response.json(
           { message: "Only the challenger can cancel" },
           { status: 403 },
         );
     } else {
-      if (challenge.opponentClubId !== myClubId && !isAdminish(user))
+      if (challenge.opponentClubId !== myClubId && !isAdmin(user))
         return Response.json(
           { message: "Only the challenged club can accept or decline" },
           { status: 403 },

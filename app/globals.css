@@ -24,3 +24,18 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Browser autofill (Chrome/Safari) forces its own !important background on
+ * autofilled inputs, which can't be overridden with a normal background
+ * color. The inset box-shadow trick paints over it with a color matching
+ * the dark BSL panels instead, and delays the internal transition so it
+ * doesn't flash white first. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  box-shadow: 0 0 0 1000px hsl(222, 42%, 14%) inset;
+  -webkit-text-fill-color: #fff;
+  caret-color: #fff;
+  transition: background-color 9999s ease-in-out 0s;
+}

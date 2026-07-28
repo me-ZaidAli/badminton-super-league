@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { db } from "@/lib/server/db";
 import { bslPlayers, bslClubs, bslLeagues } from "@/lib/server/schema";
 import { eq } from "drizzle-orm";
-import { getSessionUser, isAdminish, unauthorised } from "@/lib/server/session";
+import { getSessionUser, isAdmin, unauthorised } from "@/lib/server/session";
 import { audit } from "@/lib/server/utils";
 
 export async function PATCH(
@@ -21,7 +21,7 @@ export async function PATCH(
       .limit(1);
     if (!player)
       return Response.json({ message: "Player not found" }, { status: 404 });
-    let allowed = isAdminish(user);
+    let allowed = isAdmin(user);
     if (!allowed && player.bslClubId) {
       const [club] = await db
         .select()

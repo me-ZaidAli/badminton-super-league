@@ -1,8 +1,8 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import NextLink from "next/link";
-import { useUser } from "@/hooks/use-auth";
+import { useUser, useLogout } from "@/hooks/use-auth";
 import {
   Trophy,
   Wallet as WalletIcon,
@@ -12,6 +12,8 @@ import {
   Settings,
   Swords,
   Medal,
+  LogIn,
+  LogOut,
 } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
 
@@ -25,6 +27,8 @@ type Item = {
 
 export function BslSubNav() {
   const { data: user } = useUser();
+  const logout = useLogout();
+  const router = useRouter();
   const pathname = usePathname();
   const u = user as any;
 
@@ -47,7 +51,7 @@ export function BslSubNav() {
       href: "/admin",
       label: "Admin",
       icon: Settings,
-      show: u?.role === "OWNER",
+      show: u?.role === "OWNER" || u?.role === "ADMIN",
       match: (p) => p.startsWith("/admin"),
     },
   ];
@@ -80,6 +84,26 @@ export function BslSubNav() {
               </NextLink>
             );
           })}
+          {u ? (
+            <button
+              type="button"
+              onClick={() => logout.mutate(undefined, { onSuccess: () => router.push("/login") })}
+              className="flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border transition border-cyan-400/20 text-cyan-200/70 hover:bg-cyan-500/10 hover:text-cyan-100"
+              data-testid="subnav-link-logout"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Log Out</span>
+            </button>
+          ) : (
+            <NextLink
+              href="/login"
+              className="flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border transition border-cyan-400/20 text-cyan-200/70 hover:bg-cyan-500/10 hover:text-cyan-100"
+              data-testid="subnav-link-login"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Sign In</span>
+            </NextLink>
+          )}
         </div>
       </div>
     </nav>

@@ -20,7 +20,7 @@ import {
   bslFixtureVersions,
   bslPrizes,
 } from "./schema";
-import { isAdminish } from "./session";
+import { isAdmin } from "./session";
 import { invalidateBslSummary } from "./bsl-summary";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -483,7 +483,7 @@ export async function loadOwnedClub(
       ),
     )
     .limit(1);
-  return { club: club ?? null, canManage: !!club || isAdminish(user) };
+  return { club: club ?? null, canManage: !!club || isAdmin(user) };
 }
 
 export async function loadClubForManager(
@@ -500,7 +500,7 @@ export async function loadClubForManager(
   const isClubAdmin =
     Array.isArray((club as any).adminUserIds) &&
     (club as any).adminUserIds.includes(user.id);
-  if (!isOwnerOfClub && !isClubAdmin && !isAdminish(user))
+  if (!isOwnerOfClub && !isClubAdmin && !isAdmin(user))
     return { club: null, reason: "Not your club" };
   return { club };
 }
