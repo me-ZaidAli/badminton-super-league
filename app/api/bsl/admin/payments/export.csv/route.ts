@@ -12,8 +12,11 @@ import {
 export async function GET(req: NextRequest) {
   try {
     const user = await getSessionUser(req);
+
     if (!user) return unauthorised();
+
     if (!isAdmin(user)) return forbidden();
+
     const all = await db
       .select()
       .from(bslWalletTransactions)
@@ -30,11 +33,13 @@ export async function GET(req: NextRequest) {
           .from(bslPlayers)
           .where(inArray(bslPlayers.id, playerIds))
       : [];
+
     const userIds = Array.from(
       new Set(
         players.map((p) => p.userId).filter((x): x is number => x != null),
       ),
     );
+    
     const userRows = userIds.length
       ? await db
           .select({

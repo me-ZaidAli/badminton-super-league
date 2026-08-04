@@ -21,7 +21,9 @@ export async function GET(req: NextRequest) {
   try {
     const user = await getSessionUser(req);
     if (!user) return unauthorised();
+
     if (!isAdmin(user)) return forbidden();
+
     const [playerCount] = await db
       .select({ count: sql<number>`count(*)` })
       .from(bslPlayers);
@@ -45,6 +47,7 @@ export async function GET(req: NextRequest) {
           eq(bslPlayers.status, "PENDING_VERIFICATION"),
         ),
       );
+
     const [pendingClubCount] = await db
       .select({ count: sql<number>`count(*)` })
       .from(bslClubs)
@@ -54,18 +57,22 @@ export async function GET(req: NextRequest) {
           eq(bslClubs.status, "PENDING_VERIFICATION"),
         ),
       );
+
     const [fixtureCount] = await db
       .select({ count: sql<number>`count(*)` })
       .from(bslFixtures);
+
     const [completedFixtureCount] = await db
       .select({ count: sql<number>`count(*)` })
       .from(bslFixtures)
       .where(eq(bslFixtures.status, "FINISHED"));
+
     const recentDays = await db
       .select()
       .from(bslLeagueDays)
       .orderBy(desc(bslLeagueDays.date))
       .limit(5);
+
     const pendingTopups = await db
       .select()
       .from(bslWalletTransactions)
@@ -76,6 +83,7 @@ export async function GET(req: NextRequest) {
         ),
       )
       .limit(10);
+      
     return Response.json({
       stats: {
         players: {

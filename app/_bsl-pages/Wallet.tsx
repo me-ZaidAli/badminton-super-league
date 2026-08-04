@@ -86,10 +86,13 @@ export default function Wallet() {
     mutationFn: async () => {
       if (summary.totalPence <= 0)
         throw new Error("Add at least one package or a custom amount.");
+
       if (!/^\d{4}-\d{2}-\d{2}$/.test(payDate))
         throw new Error("Pick the date you sent the transfer.");
+
       if (payerName.trim().length < 2)
         throw new Error("Enter the bank account name you paid from.");
+
       const r = await fetch("/api/bsl/wallet/topup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -101,7 +104,9 @@ export default function Wallet() {
           payerAccountName: payerName.trim(),
         }),
       });
+
       if (!r.ok) throw new Error(await r.text());
+
       return r.json();
     },
     onSuccess: () => {

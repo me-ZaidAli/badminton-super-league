@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { motion } from "framer-motion";
 import {
   CreditCard,
   Check,
@@ -16,64 +15,115 @@ import { BSL } from "@/components/bsl/BSLPalette";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
-const TX_COLOR: any = {
+type TxStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+type Transaction = {
+  id: number;
+  bslPlayerId: number;
+  type: string;
+  amount: number;
+  status: TxStatus;
+  proofUrl: string | null;
+  paymentDate: string;
+  payerAccountName: string;
+  reference: string;
+  description: string;
+  reviewedById: number | null;
+  reviewedAt: string | null;
+  createdAt: string;
+  player: {
+    id: number;
+    userId: number;
+    displayName: string;
+    user: { id: number; fullName: string; email: string };
+  };
+};
+
+const TX_COLOR: Record<TxStatus, string> = {
   PENDING: BSL.gold,
   APPROVED: BSL.success,
   REJECTED: BSL.danger,
 };
 
+function Queue({ title, tone, items, renderItem }: any) {
+  return (
+    <GlowPanel
+      title={title}
+      subtitle={`${items?.length || 0} awaiting`}
+      tone={tone}
+    >
+      {!items?.length ? (
+        <div className="py-6 text-center text-sm" style={{ color: BSL.muted }}>
+          Queue clear · all approvals up to date.
+        </div>
+      ) : (
+        <div className="space-y-2">{items.map(renderItem)}</div>
+      )}
+    </GlowPanel>
+  );
+}
+
+function Row({ left, pay, actions, testid }: any) {
+  const hasPay = pay && (pay.amount != null || pay.date || pay.payer);
+  const fmtDate = pay?.date
+    ? new Date(pay.date).toLocaleDateString("en-GB")
+    : "—";
+  const fmtAmount =
+    typeof pay?.amount === "number" ? `£${(pay.amount / 100).toFixed(2)}` : "—";
+  return (
+    <div
+      className="flex flex-wrap items-center gap-3 p-3 rounded-lg"
+      style={{ background: "hsla(0,0%,100%,0.03)" }}
+      data-testid={testid}
+    >
+      <div className="flex items-center gap-3 flex-1 min-w-0">{left}</div>
+      {hasPay && (
+        <div
+          className="text-[10px] inline-flex flex-col gap-0.5 px-3 py-1.5 rounded-lg"
+          style={{
+            background: `${BSL.cyan}14`,
+            color: BSL.cyan,
+            border: `1px solid ${BSL.cyan}33`,
+          }}
+        >
+          <span className="font-mono font-bold">
+            {fmtAmount} · {fmtDate}
+          </span>
+          <span
+            className="text-white/70 truncate max-w-[180px]"
+            title={pay?.payer || ""}
+          >
+            {pay?.payer || "No name supplied"}
+          </span>
+        </div>
+      )}
+      <div className="flex gap-1">{actions}</div>
+    </div>
+  );
+}
+
 export default function PaymentsAdmin() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [tab, setTab] = useState<"pending" | "history">("pending");
-  const { data: pending } = useQuery<any>({
-    queryKey: ["/api/bsl/admin/pending"],
-    refetchInterval: 15000,
-  });
-  const { data: history } = useQuery<any[]>({
+
+  const { data: transactions } = useQuery<Transaction[]>({
     queryKey: ["/api/bsl/admin/transactions"],
+    refetchInterval: 15000,
   });
 
   const inv = () => {
-    qc.invalidateQueries({ queryKey: ["/api/bsl/admin/pending"] });
     qc.invalidateQueries({ queryKey: ["/api/bsl/admin/transactions"] });
     qc.invalidateQueries({ queryKey: ["/api/bsl/admin/dashboard"] });
   };
 
-  const approveClub = useMutation({
-    mutationFn: async (id: number) =>
-      (await apiRequest("PATCH", `/api/bsl/clubs/${id}/approve`, {})).json(),
-    onSuccess: (d: any) => {
-      inv();
-      toast({ title: "Club approved", description: `Invite: ${d.inviteCode}` });
-    },
-  });
-  const rejectClub = useMutation({
-    mutationFn: async (id: number) => {
-      const reason = prompt("Reason?") || "Rejected by admin";
-      return (
-        await apiRequest("PATCH", `/api/bsl/clubs/${id}/reject`, { reason })
-      ).json();
-    },
-    onSuccess: () => inv(),
-  });
-  const approvePlayer = useMutation({
-    mutationFn: async (id: number) =>
-      (await apiRequest("PATCH", `/api/bsl/players/${id}/approve`, {})).json(),
-    onSuccess: () => {
-      inv();
-      toast({ title: "Player approved" });
-    },
-  });
-  const rejectPlayer = useMutation({
-    mutationFn: async (id: number) => {
-      const reason = prompt("Reason?") || "Rejected by admin";
-      return (
-        await apiRequest("PATCH", `/api/bsl/players/${id}/reject`, { reason })
-      ).json();
-    },
-    onSuccess: () => inv(),
-  });
+  const onError = (e: any) =>
+    toast({
+      title: "Action failed",
+      description: e?.message || "Unknown error",
+      variant: "destructive",
+    });
+
   const approveTx = useMutation({
     mutationFn: async (id: number) =>
       (
@@ -87,7 +137,9 @@ export default function PaymentsAdmin() {
       inv();
       toast({ title: "Top-up approved" });
     },
+    onError,
   });
+
   const rejectTx = useMutation({
     mutationFn: async (id: number) =>
       (
@@ -98,12 +150,11 @@ export default function PaymentsAdmin() {
         )
       ).json(),
     onSuccess: () => inv(),
+    onError,
   });
 
-  const totalPending =
-    (pending?.clubs?.length || 0) +
-    (pending?.players?.length || 0) +
-    (pending?.wallets?.length || 0);
+  const pendingTx = transactions?.filter((t) => t.status === "PENDING") ?? [];
+  const totalPending = pendingTx.length;
 
   return (
     <AdminLayout active="payments">
@@ -155,128 +206,13 @@ export default function PaymentsAdmin() {
       {tab === "pending" && (
         <div className="space-y-5">
           <Queue
-            title="Pending Clubs"
-            tone="gold"
-            items={pending?.clubs}
-            renderItem={(c: any) => (
-              <Row
-                key={c.id}
-                testid={`pending-club-${c.id}`}
-                left={
-                  <>
-                    <div
-                      className="h-10 w-10 rounded-lg flex items-center justify-center text-xs font-black overflow-hidden"
-                      style={{ background: `${BSL.gold}22`, color: BSL.gold }}
-                    >
-                      {c.logoUrl ? (
-                        <img
-                          src={c.logoUrl}
-                          className="h-full w-full object-cover"
-                          alt=""
-                        />
-                      ) : (
-                        c.name.slice(0, 2)
-                      )}
-                    </div>
-                    <div>
-                      <div className="font-bold">{c.name}</div>
-                      <div
-                        className="text-[10px] uppercase tracking-widest"
-                        style={{ color: BSL.muted }}
-                      >
-                        {c.division} · {c.teamCount}t · ref {c.paymentReference}
-                      </div>
-                    </div>
-                  </>
-                }
-                pay={{
-                  amount: c.paymentAmountPence,
-                  date: c.paymentDate,
-                  payer: c.payerAccountName,
-                }}
-                actions={
-                  <>
-                    <ActionButton
-                      variant="gold"
-                      onClick={() => approveClub.mutate(c.id)}
-                      icon={<Check className="h-3 w-3" />}
-                    >
-                      Approve
-                    </ActionButton>
-                    <ActionButton
-                      variant="danger"
-                      onClick={() => rejectClub.mutate(c.id)}
-                      icon={<X className="h-3 w-3" />}
-                    >
-                      Reject
-                    </ActionButton>
-                  </>
-                }
-              />
-            )}
-          />
-
-          <Queue
-            title="Pending Players"
-            tone="cyan"
-            items={pending?.players}
-            renderItem={(p: any) => (
-              <Row
-                key={p.id}
-                testid={`pending-player-${p.id}`}
-                left={
-                  <>
-                    <div>
-                      <div
-                        className="font-bold"
-                        data-testid={`text-pending-player-name-${p.id}`}
-                      >
-                        {p.displayName || `Player #${p.userId}`}
-                      </div>
-                      <div
-                        className="text-[10px] uppercase tracking-widest"
-                        style={{ color: BSL.muted }}
-                      >
-                        {p.email ? `${p.email} · ` : ""}ref {p.paymentReference}
-                      </div>
-                    </div>
-                  </>
-                }
-                pay={{
-                  amount: p.paymentAmountPence,
-                  date: p.paymentDate,
-                  payer: p.payerAccountName,
-                }}
-                actions={
-                  <>
-                    <ActionButton
-                      variant="cyan"
-                      onClick={() => approvePlayer.mutate(p.id)}
-                      icon={<Check className="h-3 w-3" />}
-                    >
-                      Approve
-                    </ActionButton>
-                    <ActionButton
-                      variant="danger"
-                      onClick={() => rejectPlayer.mutate(p.id)}
-                      icon={<X className="h-3 w-3" />}
-                    >
-                      Reject
-                    </ActionButton>
-                  </>
-                }
-              />
-            )}
-          />
-
-          <Queue
             title="Wallet Top-Ups"
             tone="gold"
-            items={pending?.wallets}
-            renderItem={(w: any) => (
+            items={pendingTx}
+            renderItem={(transaction: Transaction) => (
               <Row
-                key={w.id}
-                testid={`pending-tx-${w.id}`}
+                key={transaction.id}
+                testid={`pending-tx-${transaction.id}`}
                 left={
                   <>
                     <WalletIcon
@@ -285,39 +221,38 @@ export default function PaymentsAdmin() {
                     />
                     <div>
                       <div className="font-bold">
-                        £{(w.amount / 100).toFixed(2)} ·{" "}
-                        {w.description || w.type}
+                        £{(transaction.amount / 100).toFixed(2)} ·{" "}
+                        {transaction.description || transaction.type}
                       </div>
                       <div
                         className="text-[10px] uppercase tracking-widest"
                         style={{ color: BSL.muted }}
                       >
-                        <span data-testid={`text-tx-player-${w.id}`}>
-                          {w.playerName ||
-                            (w.bslPlayerId ? `Player #${w.bslPlayerId}` : "—")}
+                        <span data-testid={`text-tx-player-${transaction.id}`}>
+                          {transaction.player?.displayName || `Player #${transaction.bslPlayerId}`}
                         </span>{" "}
-                        · ref {w.reference}
+                        · ref {transaction.reference}
                       </div>
                     </div>
                   </>
                 }
                 pay={{
-                  amount: w.amount,
-                  date: w.paymentDate,
-                  payer: w.payerAccountName,
+                  amount: transaction.amount,
+                  date: transaction.paymentDate,
+                  payer: transaction.payerAccountName,
                 }}
                 actions={
                   <>
                     <ActionButton
                       variant="gold"
-                      onClick={() => approveTx.mutate(w.id)}
+                      onClick={() => approveTx.mutate(transaction.id)}
                       icon={<Check className="h-3 w-3" />}
                     >
                       Approve
                     </ActionButton>
                     <ActionButton
                       variant="danger"
-                      onClick={() => rejectTx.mutate(w.id)}
+                      onClick={() => rejectTx.mutate(transaction.id)}
                       icon={<X className="h-3 w-3" />}
                     >
                       Reject
@@ -336,7 +271,7 @@ export default function PaymentsAdmin() {
           tone="cyan"
           icon={<History className="h-4 w-4" />}
         >
-          {!history?.length ? (
+          {!transactions?.length ? (
             <div
               className="py-10 text-center text-sm"
               style={{ color: BSL.muted }}
@@ -360,12 +295,9 @@ export default function PaymentsAdmin() {
                   </tr>
                 </thead>
                 <tbody>
-                  {history.map((t: any, i: number) => (
-                    <motion.tr
+                  {transactions?.map((t: Transaction) => (
+                    <tr
                       key={t.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: i * 0.01 }}
                       className="border-t"
                       style={{ borderColor: BSL.border }}
                       data-testid={`tx-${t.id}`}
@@ -377,8 +309,7 @@ export default function PaymentsAdmin() {
                         className="px-2 py-2"
                         data-testid={`text-history-player-${t.id}`}
                       >
-                        {t.playerName ||
-                          (t.bslPlayerId ? `Player #${t.bslPlayerId}` : "—")}
+                        {t.player?.displayName || `Player #${t.bslPlayerId}`}
                       </td>
                       <td className="px-2 py-2">
                         <span
@@ -413,7 +344,7 @@ export default function PaymentsAdmin() {
                       >
                         {t.reference}
                       </td>
-                    </motion.tr>
+                    </tr>
                   ))}
                 </tbody>
               </table>
@@ -422,63 +353,5 @@ export default function PaymentsAdmin() {
         </GlowPanel>
       )}
     </AdminLayout>
-  );
-}
-
-function Queue({ title, tone, items, renderItem }: any) {
-  return (
-    <GlowPanel
-      title={title}
-      subtitle={`${items?.length || 0} awaiting`}
-      tone={tone}
-    >
-      {!items?.length ? (
-        <div className="py-6 text-center text-sm" style={{ color: BSL.muted }}>
-          Queue clear · all approvals up to date.
-        </div>
-      ) : (
-        <div className="space-y-2">{items.map(renderItem)}</div>
-      )}
-    </GlowPanel>
-  );
-}
-function Row({ left, pay, actions, testid }: any) {
-  const hasPay = pay && (pay.amount != null || pay.date || pay.payer);
-  const fmtDate = pay?.date
-    ? new Date(pay.date).toLocaleDateString("en-GB")
-    : "—";
-  const fmtAmount =
-    typeof pay?.amount === "number" ? `£${(pay.amount / 100).toFixed(2)}` : "—";
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: -8 }}
-      animate={{ opacity: 1, x: 0 }}
-      className="flex flex-wrap items-center gap-3 p-3 rounded-lg"
-      style={{ background: "hsla(0,0%,100%,0.03)" }}
-      data-testid={testid}
-    >
-      <div className="flex items-center gap-3 flex-1 min-w-0">{left}</div>
-      {hasPay && (
-        <div
-          className="text-[10px] inline-flex flex-col gap-0.5 px-3 py-1.5 rounded-lg"
-          style={{
-            background: `${BSL.cyan}14`,
-            color: BSL.cyan,
-            border: `1px solid ${BSL.cyan}33`,
-          }}
-        >
-          <span className="font-mono font-bold">
-            {fmtAmount} · {fmtDate}
-          </span>
-          <span
-            className="text-white/70 truncate max-w-[180px]"
-            title={pay?.payer || ""}
-          >
-            {pay?.payer || "No name supplied"}
-          </span>
-        </div>
-      )}
-      <div className="flex gap-1">{actions}</div>
-    </motion.div>
   );
 }
