@@ -70,6 +70,10 @@ export async function PATCH(
       ).catch(() => {});
     return Response.json(updated);
   } catch (err: any) {
-    return Response.json({ message: err.message }, { status: 500 });
+    console.error("[clubs/[id]/approve PATCH]", err);
+    return Response.json(
+      { message: "Failed to approve club" },
+      { status: 500 },
+    );
   }
 }

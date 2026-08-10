@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
@@ -21,6 +21,7 @@ import {
   Sun,
   Trash2,
   AlertTriangle,
+  type LucideIcon,
 } from "lucide-react";
 import { Link } from "@/lib/routing";
 import { AdminLayout } from "./AdminLayout";
@@ -30,12 +31,40 @@ import { BSL } from "@/components/bsl/BSLPalette";
 import { ShareInviteDialog } from "@/components/bsl/ShareInviteDialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import type { BslClub, BslLeague, BslPlayer, BslPaymentStatus } from "@/lib/types";
 
-const STATUS_COLOR: any = {
+const STATUS_COLOR: Record<BslPaymentStatus, string> = {
   PENDING_PAYMENT: BSL.muted,
   PENDING_VERIFICATION: BSL.gold,
   ACTIVE: BSL.success,
   REJECTED: BSL.danger,
+};
+
+// Form shape saved from the club editor dialog — subset of BslClub fields it edits.
+type ClubEditForm = {
+  name: string;
+  division: string;
+  teamCount: number;
+  logoUrl: string;
+  additionalDivisions: string[];
+  isFlagged: boolean;
+  isSuspended: boolean;
+  adminNotes: string;
+};
+
+type CreateClubPayload = {
+  name: string;
+  division: string;
+  additionalDivisions: string[];
+  logoUrl: string | null;
+  status: "ACTIVE" | "PENDING_PAYMENT";
+  categoryPairs: Record<string, number>;
+};
+
+type UserSearchResult = {
+  id: number;
+  fullName: string;
+  email: string;
 };
 
 export default function ClubsAdmin() {
@@ -46,12 +75,12 @@ export default function ClubsAdmin() {
   const [divFilter, setDivFilter] = useState("");
   const [editId, setEditId] = useState<number | null>(null);
   const [copied, setCopied] = useState<number | null>(null);
-  const [shareClub, setShareClub] = useState<any | null>(null);
+  const [shareClub, setShareClub] = useState<BslClub | null>(null);
   const [creating, setCreating] = useState(false);
   const create = useMutation({
-    mutationFn: async (v: any) =>
+    mutationFn: async (v: CreateClubPayload): Promise<BslClub> =>
       (await apiRequest("POST", "/api/bsl/admin/clubs", v)).json(),
-    onSuccess: (d: any) => {
+    onSuccess: (d) => {
       qc.invalidateQueries({ queryKey: ["/api/bsl/admin/clubs"] });
       qc.invalidateQueries({ queryKey: ["/api/bsl/admin/dashboard"] });
       qc.invalidateQueries({ queryKey: ["/api/bsl/clubs"] });
@@ -63,7 +92,7 @@ export default function ClubsAdmin() {
           : "Saved as pending payment",
       });
     },
-    onError: (e: any) =>
+    onError: (e: Error) =>
       toast({
         title: "Failed",
         description: e.message?.replace(/^\d+:\s*/, ""),
@@ -71,8 +100,8 @@ export default function ClubsAdmin() {
       }),
   });
 
-  const { data: league } = useQuery<any>({ queryKey: ["/api/bsl/league"] });
-  const { data: clubs } = useQuery<any[]>({
+  const { data: league } = useQuery<BslLeague>({ queryKey: ["/api/bsl/league"] });
+  const { data: clubs } = useQuery<BslClub[]>({
     queryKey: ["/api/bsl/admin/clubs", statusFilter, divFilter, q],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -87,11 +116,14 @@ export default function ClubsAdmin() {
   });
 
   const editing = useMemo(
-    () => (clubs || []).find((c: any) => c.id === editId),
+    () => (clubs || []).find((c) => c.id === editId),
     [clubs, editId],
   );
   const update = useMutation({
-    mutationFn: async (v: { id: number; data: any }) =>
+    mutationFn: async (v: {
+      id: number;
+      data: ClubEditForm;
+    }): Promise<BslClub> =>
       (
         await apiRequest("PATCH", `/api/bsl/admin/clubs/${v.id}`, v.data)
       ).json(),
@@ -103,9 +135,9 @@ export default function ClubsAdmin() {
     },
   });
   const approve = useMutation({
-    mutationFn: async (id: number) =>
+    mutationFn: async (id: number): Promise<BslClub> =>
       (await apiRequest("PATCH", `/api/bsl/clubs/${id}/approve`, {})).json(),
-    onSuccess: (d: any) => {
+    onSuccess: (d) => {
       qc.invalidateQueries({ queryKey: ["/api/bsl/admin/clubs"] });
       qc.invalidateQueries({ queryKey: ["/api/bsl/admin/pending"] });
       qc.invalidateQueries({ queryKey: ["/api/bsl/admin/dashboard"] });
@@ -119,7 +151,7 @@ export default function ClubsAdmin() {
     mutationFn: async (v: {
       id: number;
       status: "ACTIVE" | "PENDING_PAYMENT";
-    }) =>
+    }): Promise<BslClub> =>
       (
         await apiRequest(
           "PATCH",
@@ -127,7 +159,7 @@ export default function ClubsAdmin() {
           { status: v.status },
         )
       ).json(),
-    onSuccess: (d: any, v) => {
+    onSuccess: (d, v) => {
       qc.invalidateQueries({ queryKey: ["/api/bsl/admin/clubs"] });
       qc.invalidateQueries({ queryKey: ["/api/bsl/admin/pending"] });
       qc.invalidateQueries({ queryKey: ["/api/bsl/admin/dashboard"] });
@@ -142,7 +174,7 @@ export default function ClubsAdmin() {
             : "Club hidden from public list",
       });
     },
-    onError: (e: any) =>
+    onError: (e: Error) =>
       toast({
         title: "Failed",
         description: e.message,
@@ -152,7 +184,10 @@ export default function ClubsAdmin() {
 
   // Super-admin sleep / wake — keeps all club data; just flips a flag.
   const setSleep = useMutation({
-    mutationFn: async (v: { id: number; sleeping: boolean }) =>
+    mutationFn: async (v: {
+      id: number;
+      sleeping: boolean;
+    }): Promise<BslClub> =>
       (
         await apiRequest("PATCH", `/api/bsl/admin/clubs/${v.id}/sleep`, {
           sleeping: v.sleeping,
@@ -169,7 +204,7 @@ export default function ClubsAdmin() {
           : "Club is active again.",
       });
     },
-    onError: (e: any) =>
+    onError: (e: Error) =>
       toast({
         title: "Failed",
         description: e.message?.replace(/^\d+:\s*/, ""),
@@ -178,16 +213,19 @@ export default function ClubsAdmin() {
   });
 
   // Super-admin wipe out — hard delete; requires typing the club name.
-  const [wipeTarget, setWipeTarget] = useState<any | null>(null);
+  const [wipeTarget, setWipeTarget] = useState<BslClub | null>(null);
   const [wipeConfirm, setWipeConfirm] = useState("");
   const wipeOut = useMutation({
-    mutationFn: async (v: { id: number; confirmName: string }) =>
+    mutationFn: async (v: {
+      id: number;
+      confirmName: string;
+    }): Promise<{ ok: boolean; fixtures?: number }> =>
       (
         await apiRequest("DELETE", `/api/bsl/admin/clubs/${v.id}/wipe`, {
           confirmName: v.confirmName,
         })
       ).json(),
-    onSuccess: (d: any) => {
+    onSuccess: (d) => {
       qc.invalidateQueries({ queryKey: ["/api/bsl/admin/clubs"] });
       qc.invalidateQueries({ queryKey: ["/api/bsl/clubs"] });
       qc.invalidateQueries({ queryKey: ["/api/bsl/admin/dashboard"] });
@@ -199,7 +237,7 @@ export default function ClubsAdmin() {
         description: `Deleted ${d.fixtures || 0} fixtures. Player accounts preserved.`,
       });
     },
-    onError: (e: any) =>
+    onError: (e: Error) =>
       toast({
         title: "Failed",
         description: e.message?.replace(/^\d+:\s*/, ""),
@@ -315,7 +353,7 @@ export default function ClubsAdmin() {
                 </tr>
               </thead>
               <tbody>
-                {clubs.map((c: any, i: number) => (
+                {clubs.map((c, i) => (
                   <motion.tr
                     key={c.id}
                     initial={{ opacity: 0, y: 4 }}
@@ -405,7 +443,7 @@ export default function ClubsAdmin() {
                       {c.inviteCode ? (
                         <button
                           onClick={() => {
-                            navigator.clipboard.writeText(c.inviteCode);
+                            navigator.clipboard.writeText(c.inviteCode!);
                             setCopied(c.id);
                             setTimeout(() => setCopied(null), 1500);
                           }}
@@ -698,7 +736,13 @@ export default function ClubsAdmin() {
   );
 }
 
-function ClubEditor({ club, divisions, onClose, onSave }: any) {
+type ClubEditorProps = {
+  club: BslClub;
+  divisions: string[];
+  onClose: () => void;
+  onSave: (data: ClubEditForm) => Promise<void> | void;
+};
+function ClubEditor({ club, divisions, onClose, onSave }: ClubEditorProps) {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [form, setForm] = useState({
@@ -716,16 +760,16 @@ function ClubEditor({ club, divisions, onClose, onSave }: any) {
 
   // Live roster + admin list. We fetch the manager-view (already used by the
   // /clubs/:id/manage page) to get the active player + user mapping in one go.
-  const { data: managerView } = useQuery<any>({
+  const { data: managerView } = useQuery<{ roster: BslPlayer[] }>({
     queryKey: [`/api/bsl/admin/clubs/${club.id}/manager-view`],
   });
-  const roster: any[] = managerView?.roster || [];
+  const roster: BslPlayer[] = managerView?.roster || [];
   const adminUserIds: number[] = Array.isArray(club.adminUserIds)
     ? club.adminUserIds
     : [];
 
   const setAdmins = useMutation({
-    mutationFn: async (userIds: number[]) =>
+    mutationFn: async (userIds: number[]): Promise<BslClub> =>
       (
         await apiRequest("PATCH", `/api/bsl/clubs/${club.id}/admins`, {
           userIds,
@@ -735,7 +779,7 @@ function ClubEditor({ club, divisions, onClose, onSave }: any) {
       qc.invalidateQueries({ queryKey: ["/api/bsl/admin/clubs"] });
       toast({ title: "Club admins updated" });
     },
-    onError: (e: any) =>
+    onError: (e: Error) =>
       toast({
         title: "Failed",
         description: e.message?.replace(/^\d+:\s*/, ""),
@@ -747,7 +791,7 @@ function ClubEditor({ club, divisions, onClose, onSave }: any) {
   // because we can't tell server-side roles from here cheaply. The 403 message
   // surfaces if a non-owner tries.
   const [ownerSearch, setOwnerSearch] = useState("");
-  const { data: ownerCandidates } = useQuery<any[]>({
+  const { data: ownerCandidates } = useQuery<UserSearchResult[]>({
     queryKey: ["/api/admin/users/search-for-coach", ownerSearch],
     queryFn: async () => {
       if (ownerSearch.trim().length < 2) return [];
@@ -760,7 +804,7 @@ function ClubEditor({ club, divisions, onClose, onSave }: any) {
     enabled: ownerSearch.trim().length >= 2,
   });
   const reassignOwner = useMutation({
-    mutationFn: async (userId: number) =>
+    mutationFn: async (userId: number): Promise<BslClub> =>
       (
         await apiRequest("PATCH", `/api/bsl/admin/clubs/${club.id}/owner`, {
           userId,
@@ -771,7 +815,7 @@ function ClubEditor({ club, divisions, onClose, onSave }: any) {
       setOwnerSearch("");
       toast({ title: "Owner reassigned" });
     },
-    onError: (e: any) =>
+    onError: (e: Error) =>
       toast({
         title: "Failed",
         description: e.message?.replace(/^\d+:\s*/, ""),
@@ -1005,10 +1049,10 @@ function ClubEditor({ club, divisions, onClose, onSave }: any) {
             <div className="space-y-1.5 max-h-40 overflow-y-auto">
               {roster
                 .filter(
-                  (p: any) =>
+                  (p) =>
                     p.status === "ACTIVE" && p.userId !== club.managerUserId,
                 )
-                .map((p: any) => {
+                .map((p) => {
                   const on = adminUserIds.includes(p.userId);
                   return (
                     <button
@@ -1037,7 +1081,7 @@ function ClubEditor({ club, divisions, onClose, onSave }: any) {
                   );
                 })}
               {roster.filter(
-                (p: any) =>
+                (p) =>
                   p.status === "ACTIVE" && p.userId !== club.managerUserId,
               ).length === 0 && (
                 <div className="text-[10px]" style={{ color: BSL.faint }}>
@@ -1081,7 +1125,7 @@ function ClubEditor({ club, divisions, onClose, onSave }: any) {
                 className="mt-1 max-h-40 overflow-y-auto rounded-lg"
                 style={{ border: `1px solid ${BSL.border}` }}
               >
-                {ownerCandidates.slice(0, 8).map((u: any) => (
+                {ownerCandidates.slice(0, 8).map((u) => (
                   <button
                     key={u.id}
                     onClick={() => reassignOwner.mutate(u.id)}
@@ -1131,7 +1175,7 @@ function ClubEditor({ club, divisions, onClose, onSave }: any) {
     </motion.div>
   );
 }
-function Field({ label, children }: any) {
+function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div>
       <label
@@ -1150,7 +1194,18 @@ function Field({ label, children }: any) {
 // Spins up the bslClubs row + the requested number of pair (team) rows in
 // one call. The current admin becomes managerUserId by default.
 // ---------------------------------------------------------------------------
-function CreateClubDialog({ divisions, onClose, onSubmit, submitting }: any) {
+type CreateClubDialogProps = {
+  divisions: string[];
+  onClose: () => void;
+  onSubmit: (data: CreateClubPayload) => void;
+  submitting: boolean;
+};
+function CreateClubDialog({
+  divisions,
+  onClose,
+  onSubmit,
+  submitting,
+}: CreateClubDialogProps) {
   const CATS = ["MD", "WD", "XD"] as const;
   const [form, setForm] = useState({
     name: "",
@@ -1391,7 +1446,15 @@ function CreateClubDialog({ divisions, onClose, onSubmit, submitting }: any) {
     </motion.div>
   );
 }
-function Toggle({ on, onChange, label, icon: Icon, tone, testid }: any) {
+type ToggleProps = {
+  on: boolean;
+  onChange: (value: boolean) => void;
+  label: string;
+  icon: LucideIcon;
+  tone?: "gold" | "danger";
+  testid?: string;
+};
+function Toggle({ on, onChange, label, icon: Icon, tone, testid }: ToggleProps) {
   const c = tone === "danger" ? BSL.danger : BSL.gold;
   return (
     <button

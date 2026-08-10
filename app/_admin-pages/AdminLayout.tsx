@@ -98,6 +98,74 @@ export function AdminLayout({
     (user as any)?.role === "OWNER" ? "Super Admin" : "Operations Admin";
   const pending = dash?.pendingPayments || 0;
 
+  const navContent = (
+    <>
+      <nav className="p-3 space-y-1">
+        {NAV.map((item) => {
+          const Active = active === item.key;
+          const Icon = item.icon;
+          return (
+            <button
+              key={item.key}
+              onClick={() => {
+                setLoc(item.href);
+                setOpen(false);
+              }}
+              className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all relative overflow-hidden group"
+              style={{
+                background: Active
+                  ? `linear-gradient(90deg, ${BSL.gold}22, transparent)`
+                  : "transparent",
+                color: Active ? BSL.gold : "white",
+              }}
+              data-testid={`nav-${item.key}`}
+            >
+              {Active && (
+                <motion.div
+                  layoutId="adminNavActiveBar"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full"
+                  style={{
+                    background: BSL.gold,
+                    boxShadow: `0 0 12px ${BSL.gold}`,
+                  }}
+                />
+              )}
+              <Icon className="h-4 w-4 flex-shrink-0" />
+              <span className="text-sm font-bold uppercase tracking-wider">
+                {item.label}
+              </span>
+              {item.key === "payments" && pending > 0 && (
+                <span
+                  className="ml-auto text-[10px] px-2 py-0.5 rounded-full font-black"
+                  style={{ background: BSL.gold, color: BSL.bgDeep }}
+                >
+                  {pending}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </nav>
+      <div
+        className="absolute bottom-3 left-3 right-3 p-3 rounded-xl text-[11px]"
+        style={{
+          background: BSL.cardSoft,
+          color: BSL.muted,
+          border: `1px solid ${BSL.border}`,
+        }}
+      >
+        <div
+          className="font-black uppercase tracking-widest mb-1"
+          style={{ color: BSL.cyan }}
+        >
+          System
+        </div>
+        <div>Live · {dash?.liveMatches ?? 0} matches</div>
+        <div>{dash?.activeClubs ?? 0} active clubs</div>
+      </div>
+    </>
+  );
+
   return (
     <div className="min-h-screen text-white" style={{ background: BSL.bgDeep }}>
       <BSLBackground />
@@ -185,85 +253,35 @@ export function AdminLayout({
       </div>
 
       <div className="flex">
-        {/* === LEFT NAV === */}
+        {/* === LEFT NAV (desktop) === */}
+        {/* Always rendered; visibility is CSS-only (`hidden lg:block`) so the
+            server and client markup match — no `typeof window` branching. */}
+        <aside
+          className="hidden lg:sticky lg:top-14 lg:block lg:w-64 lg:h-[calc(100vh-3.5rem)]"
+          style={{
+            background: "hsla(222,55%,5%,0.95)",
+            borderRight: `1px solid ${BSL.border}`,
+          }}
+        >
+          {navContent}
+        </aside>
+
+        {/* === LEFT NAV (mobile drawer) === */}
+        {/* Only mounted client-side once opened, so there's nothing to mismatch on hydration. */}
         <AnimatePresence>
-          {(open ||
-            typeof window === "undefined" ||
-            window.innerWidth >= 1024) && (
+          {open && (
             <motion.aside
               initial={{ x: -20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -20, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className={`${open ? "fixed inset-y-14 left-0 z-30 w-64" : "hidden"} lg:sticky lg:top-14 lg:block lg:w-64 lg:h-[calc(100vh-3.5rem)]`}
+              className="fixed inset-y-14 left-0 z-30 w-64 lg:hidden"
               style={{
                 background: "hsla(222,55%,5%,0.95)",
                 borderRight: `1px solid ${BSL.border}`,
               }}
             >
-              <nav className="p-3 space-y-1">
-                {NAV.map((item) => {
-                  const Active = active === item.key;
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.key}
-                      onClick={() => {
-                        setLoc(item.href);
-                        setOpen(false);
-                      }}
-                      className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all relative overflow-hidden group"
-                      style={{
-                        background: Active
-                          ? `linear-gradient(90deg, ${BSL.gold}22, transparent)`
-                          : "transparent",
-                        color: Active ? BSL.gold : "white",
-                      }}
-                      data-testid={`nav-${item.key}`}
-                    >
-                      {Active && (
-                        <motion.div
-                          layoutId="adminNavActiveBar"
-                          className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full"
-                          style={{
-                            background: BSL.gold,
-                            boxShadow: `0 0 12px ${BSL.gold}`,
-                          }}
-                        />
-                      )}
-                      <Icon className="h-4 w-4 flex-shrink-0" />
-                      <span className="text-sm font-bold uppercase tracking-wider">
-                        {item.label}
-                      </span>
-                      {item.key === "payments" && pending > 0 && (
-                        <span
-                          className="ml-auto text-[10px] px-2 py-0.5 rounded-full font-black"
-                          style={{ background: BSL.gold, color: BSL.bgDeep }}
-                        >
-                          {pending}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </nav>
-              <div
-                className="absolute bottom-3 left-3 right-3 p-3 rounded-xl text-[11px]"
-                style={{
-                  background: BSL.cardSoft,
-                  color: BSL.muted,
-                  border: `1px solid ${BSL.border}`,
-                }}
-              >
-                <div
-                  className="font-black uppercase tracking-widest mb-1"
-                  style={{ color: BSL.cyan }}
-                >
-                  System
-                </div>
-                <div>Live · {dash?.liveMatches ?? 0} matches</div>
-                <div>{dash?.activeClubs ?? 0} active clubs</div>
-              </div>
+              {navContent}
             </motion.aside>
           )}
         </AnimatePresence>

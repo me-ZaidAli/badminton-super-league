@@ -80,6 +80,10 @@ export async function GET(
       transactions: txRows,
     });
   } catch (err: any) {
-    return Response.json({ message: err.message }, { status: 500 });
+    console.error("[admin/clubs/[id]/manager-view GET]", err);
+    return Response.json(
+      { message: "Failed to load club" },
+      { status: 500 },
+    );
   }
 }

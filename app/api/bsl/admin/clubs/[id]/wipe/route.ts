@@ -66,6 +66,7 @@ export async function DELETE(
     await audit(user, "OWNER_WIPE_CLUB", "bsl_clubs", id, { name: club.name });
     return Response.json({ ok: true });
   } catch (err: any) {
-    return Response.json({ message: err.message }, { status: 500 });
+    console.error("[admin/clubs/[id]/wipe DELETE]", err);
+    return Response.json({ message: "Failed to wipe club" }, { status: 500 });
   }
 }

@@ -54,6 +54,10 @@ export async function PATCH(
     });
     return Response.json(updated);
   } catch (err: any) {
-    return Response.json({ message: err.message }, { status: 500 });
+    console.error("[clubs/[id]/admins PATCH]", err);
+    return Response.json(
+      { message: "Failed to update club admins" },
+      { status: 500 },
+    );
   }
 }

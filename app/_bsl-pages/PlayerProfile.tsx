@@ -60,7 +60,13 @@ function cleanErr(e: any): string {
 export default function PlayerProfile() {
   const qc = useQueryClient();
   const { toast } = useToast();
-  const { data, isLoading } = useQuery<Dashboard>({
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery<Dashboard>({
     queryKey: ["/api/bsl/players/me/dashboard"],
   });
 
@@ -182,6 +188,32 @@ export default function PlayerProfile() {
           style={{ color: BSL.muted }}
         >
           Loading…
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div
+        className="min-h-screen text-white"
+        style={{ background: BSL.bgDeep }}
+      >
+        <BSLBackground />
+        <div className="max-w-2xl mx-auto px-4 py-12">
+          <BackBar />
+          <GlowPanel
+            title="Couldn't load profile"
+            tone="cyan"
+            icon={<UserIcon className="h-4 w-4" />}
+          >
+            <p className="text-sm mb-4" style={{ color: BSL.muted }}>
+              {(error as Error)?.message || "Something went wrong."}
+            </p>
+            <ActionButton variant="cyan" onClick={() => refetch()}>
+              Try again
+            </ActionButton>
+          </GlowPanel>
         </div>
       </div>
     );

@@ -53,7 +53,8 @@ export async function GET(req: NextRequest) {
       })),
     );
   } catch (err: any) {
-    return Response.json({ message: err.message }, { status: 500 });
+    console.error("[admin/clubs GET]", err);
+    return Response.json({ message: "Failed to load clubs" }, { status: 500 });
   }
 }
 
@@ -66,10 +67,12 @@ export async function POST(req: NextRequest) {
     const {
       name,
       division,
+      additionalDivisions,
       managerUserId,
       logoUrl,
       categories,
       categoryPairs,
+      status,
     } = body;
     if (!name || !division)
       return Response.json(
@@ -82,17 +85,20 @@ export async function POST(req: NextRequest) {
       .values({
         name,
         division,
-        managerUserId: managerUserId || null,
+        managerUserId: managerUserId || user.id,
         logoUrl: logoUrl || null,
         categories: categories || [],
         categoryPairs: categoryPairs || {},
         paymentReference,
-        status: "ACTIVE",
-        additionalDivisions: [],
+        status: status === "PENDING_PAYMENT" ? "PENDING_PAYMENT" : "ACTIVE",
+        additionalDivisions: Array.isArray(additionalDivisions)
+          ? additionalDivisions.filter((d): d is string => typeof d === "string")
+          : [],
       } as any)
       .returning();
     return Response.json(created);
   } catch (err: any) {
-    return Response.json({ message: err.message }, { status: 500 });
+    console.error("[admin/clubs POST]", err);
+    return Response.json({ message: "Failed to create club" }, { status: 500 });
   }
 }

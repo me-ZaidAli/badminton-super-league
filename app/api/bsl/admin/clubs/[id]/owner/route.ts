@@ -47,6 +47,10 @@ export async function PATCH(
     });
     return Response.json(updated);
   } catch (err: any) {
-    return Response.json({ message: err.message }, { status: 500 });
+    console.error("[admin/clubs/[id]/owner PATCH]", err);
+    return Response.json(
+      { message: "Failed to transfer club ownership" },
+      { status: 500 },
+    );
   }
 }

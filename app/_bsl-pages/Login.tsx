@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Link, useLocation } from "@/lib/routing";
+import { Link, useLocation, useSearch } from "@/lib/routing";
 import { BSLBackground } from "@/components/bsl/BSLBackground";
 import { GlowPanel } from "@/components/bsl/GlowPanel";
 import { ActionButton } from "@/components/bsl/ActionButton";
@@ -13,6 +13,7 @@ import { useLogin } from "@/hooks/use-auth";
 
 export default function Login() {
   const [, setLoc] = useLocation();
+  const search = useSearch();
   const { toast } = useToast();
   const login = useLogin();
   const [email, setEmail] = useState("");
@@ -34,10 +35,13 @@ export default function Login() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
+    // Proxy redirects unauthenticated visitors here with ?next=<original path>.
+    const nextPath = new URLSearchParams(search).get("next");
     login.mutate(
       { email, password },
       {
-        onSuccess: () => setLoc("/"),
+        onSuccess: () =>
+          setLoc(nextPath && nextPath.startsWith("/") ? nextPath : "/"),
         onError: (err: any) =>
           toast({
             title: "Login failed",
